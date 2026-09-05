@@ -18,11 +18,13 @@ C_OBJECTS = $(C_SOURCES:%.c=$(BUILD)/%.o)
 
 ASM_SOURCES = \
 	boot/entry.asm \
-	kernel/cpu/isr.asm
+	kernel/cpu/isr.asm \
+	kernel/sched_switch.asm
 
 ASM_OBJECTS = \
 	$(BUILD)/boot/entry.o \
-	$(BUILD)/kernel/cpu/isr.o
+	$(BUILD)/kernel/cpu/isr.o \
+	$(BUILD)/kernel/sched_switch.o
 
 all: $(BUILD)/satos.iso
 
@@ -44,6 +46,10 @@ $(BUILD)/boot/entry.o: boot/entry.asm
 	$(NASM) -f elf64 $< -o $@
 
 $(BUILD)/kernel/cpu/isr.o: kernel/cpu/isr.asm
+	mkdir -p $(dir $@)
+	$(NASM) -f elf64 $< -o $@
+
+$(BUILD)/kernel/sched_switch.o: kernel/sched_switch.asm
 	mkdir -p $(dir $@)
 	$(NASM) -f elf64 $< -o $@
 

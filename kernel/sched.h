@@ -13,6 +13,8 @@ enum thread_state
     THREAD_RUNNING
 };
 
+typedef void (*thread_function)(void);
+
 struct thread
 {
     uint64_t id;
@@ -26,5 +28,7 @@ struct thread
 };
 
 void scheduler_init(void);
+
+int thread_create(thread_function function);
 
 #endif
