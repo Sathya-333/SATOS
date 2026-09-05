@@ -35,9 +35,13 @@ $(BUILD)/entry.o: boot/entry.asm | $(BUILD)
 
 $(BUILD)/kernel.o: kernel/kernel.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
+$(BUILD)/idt.o: kernel/cpu/idt.c | $(BUILD)
+	$(CC) $(CFLAGS) -Ikernel -c $< -o $@
 
-$(KERNEL): $(BUILD)/entry.o $(BUILD)/kernel.o linker.ld
-	$(LD) $(LDFLAGS) -o $@ $(BUILD)/entry.o $(BUILD)/kernel.o
+$(BUILD)/isr.o: kernel/cpu/isr.asm | $(BUILD)
+	$(ASM) -f elf64 $< -o $@
+$(KERNEL): $(BUILD)/entry.o $(BUILD)/kernel.o $(BUILD)/idt.o $(BUILD)/isr.o linker.ld
+	$(LD) $(LDFLAGS) -o $@ $(BUILD)/entry.o $(BUILD)/kernel.o $(BUILD)/idt.o $(BUILD)/isr.o
 
 $(ISO): $(KERNEL) boot/grub.cfg
 	mkdir -p $(BUILD)/isodir/boot/grub

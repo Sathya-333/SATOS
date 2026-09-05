@@ -1,5 +1,5 @@
 #include <stdint.h>
-
+#include "cpu/idt.h"
 #define VGA_MEMORY ((volatile uint16_t*)0xB8000)
 #define VGA_WIDTH  80
 #define VGA_HEIGHT 25
@@ -52,6 +52,7 @@ static void print(const char* text)
 void kmain(void)
 {
     clear_screen();
+    idt_init();
 
     print("========================================\n");
     print("          SATOS KERNEL v0.1\n");
