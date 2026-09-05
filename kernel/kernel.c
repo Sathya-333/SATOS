@@ -3,6 +3,7 @@
 #include "cpu/idt.h"
 #include "cpu/pic.h"
 #include "cpu/timer.h"
+#include "sched.h"
 
 #define VGA_MEMORY ((volatile uint16_t*)0xB8000)
 #define VGA_WIDTH  80
@@ -96,6 +97,7 @@ void kmain(void)
     idt_init();
     pic_init();
     timer_init();
+    scheduler_init();
 
     print("Interrupts   : READY\n");
     print("Timer        : READY\n\n");

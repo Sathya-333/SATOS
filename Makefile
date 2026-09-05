@@ -11,7 +11,8 @@ C_SOURCES = \
 	kernel/kernel.c \
 	kernel/cpu/idt.c \
 	kernel/cpu/pic.c \
-	kernel/cpu/timer.c
+	kernel/cpu/timer.c \
+	kernel/sched.c
 
 C_OBJECTS = $(C_SOURCES:%.c=$(BUILD)/%.o)
 
