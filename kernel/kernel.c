@@ -1,5 +1,9 @@
 #include <stdint.h>
+
 #include "cpu/idt.h"
+#include "cpu/pic.h"
+#include "cpu/timer.h"
+
 #define VGA_MEMORY ((volatile uint16_t*)0xB8000)
 #define VGA_WIDTH  80
 #define VGA_HEIGHT 25
@@ -49,10 +53,37 @@ static void print(const char* text)
     }
 }
 
+static void print_number(uint64_t number)
+{
+    char buffer[21];
+    int i = 0;
+
+    if (number == 0)
+    {
+        print("0");
+        return;
+    }
+
+    while (number > 0)
+    {
+        buffer[i++] = '0' + (number % 10);
+        number /= 10;
+    }
+
+    while (i > 0)
+    {
+        char digit[2];
+
+        digit[0] = buffer[--i];
+        digit[1] = '\0';
+
+        print(digit);
+    }
+}
+
 void kmain(void)
 {
     clear_screen();
-    idt_init();
 
     print("========================================\n");
     print("          SATOS KERNEL v0.1\n");
@@ -62,10 +93,31 @@ void kmain(void)
     print("Boot status  : OK\n");
     print("Kernel       : ONLINE\n\n");
 
+    idt_init();
+    pic_init();
+    timer_init();
+
+    print("Interrupts   : READY\n");
+    print("Timer        : READY\n\n");
+
+    __asm__ volatile ("sti");
+
     print("SATOS> ");
 
     while (1)
     {
+        static uint64_t last_display = 0;
+
+        uint64_t current_ticks = timer_get_ticks();
+
+        if (current_ticks >= last_display + 100)
+        {
+            last_display = current_ticks;
+
+            print("\nTimer ticks: ");
+            print_number(current_ticks);
+        }
+
         __asm__ volatile ("hlt");
     }
 }

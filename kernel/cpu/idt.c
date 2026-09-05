@@ -21,6 +21,7 @@ static struct idt_entry idt[256];
 static struct idt_pointer idt_ptr;
 
 extern void isr0(void);
+extern void irq0(void);
 
 static void set_idt_entry(int number, void (*handler)(void))
 {
@@ -54,6 +55,7 @@ void idt_init(void)
     }
 
     set_idt_entry(0, isr0);
+    set_idt_entry(32,irq0);
 
     idt_ptr.limit = sizeof(idt) - 1;
     idt_ptr.base = (uint64_t)&idt;

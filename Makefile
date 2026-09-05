@@ -1,59 +1,53 @@
-ASM=nasm
-CC=gcc
-LD=ld
+CC = gcc
+LD = ld
+NASM = nasm
 
-CFLAGS=-std=gnu11 \
-       -ffreestanding \
-       -O2 \
-       -Wall \
-       -Wextra \
-       -m64 \
-       -mno-red-zone \
-       -fno-pie \
-       -fno-stack-protector \
-       -mno-sse \
-       -mno-sse2 \
-       -mno-mmx \
-       -mno-80387
+CFLAGS = -ffreestanding -m64 -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -Wall -Wextra -Ikernel
+LDFLAGS = -nostdlib -z max-page-size=0x1000 -T linker.ld
 
-LDFLAGS=-T linker.ld -nostdlib
+BUILD = build
 
-BUILD=build
+C_SOURCES = \
+	kernel/kernel.c \
+	kernel/cpu/idt.c \
+	kernel/cpu/pic.c \
+	kernel/cpu/timer.c
 
-KERNEL=$(BUILD)/satos.elf
-ISO=$(BUILD)/satos.iso
+C_OBJECTS = $(C_SOURCES:%.c=$(BUILD)/%.o)
 
-.PHONY: all clean run debug
+ASM_SOURCES = \
+	boot/entry.asm \
+	kernel/cpu/isr.asm
 
-all: $(ISO)
+ASM_OBJECTS = \
+	$(BUILD)/boot/entry.o \
+	$(BUILD)/kernel/cpu/isr.o
 
-$(BUILD):
-	mkdir -p $(BUILD)
+all: $(BUILD)/satos.iso
 
-$(BUILD)/entry.o: boot/entry.asm | $(BUILD)
-	$(ASM) -f elf64 $< -o $@
+$(BUILD)/satos.elf: $(C_OBJECTS) $(ASM_OBJECTS)
+	$(LD) $(LDFLAGS) -o $@ $^
 
-$(BUILD)/kernel.o: kernel/kernel.c | $(BUILD)
+$(BUILD)/satos.iso: $(BUILD)/satos.elf boot/grub.cfg
+	mkdir -p $(BUILD)/iso/boot/grub
+	cp $(BUILD)/satos.elf $(BUILD)/iso/boot/satos.elf
+	cp boot/grub.cfg $(BUILD)/iso/boot/grub/grub.cfg
+	grub-mkrescue -o $@ $(BUILD)/iso
+
+$(BUILD)/kernel/%.o: kernel/%.c
+	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
-$(BUILD)/idt.o: kernel/cpu/idt.c | $(BUILD)
-	$(CC) $(CFLAGS) -Ikernel -c $< -o $@
 
-$(BUILD)/isr.o: kernel/cpu/isr.asm | $(BUILD)
-	$(ASM) -f elf64 $< -o $@
-$(KERNEL): $(BUILD)/entry.o $(BUILD)/kernel.o $(BUILD)/idt.o $(BUILD)/isr.o linker.ld
-	$(LD) $(LDFLAGS) -o $@ $(BUILD)/entry.o $(BUILD)/kernel.o $(BUILD)/idt.o $(BUILD)/isr.o
+$(BUILD)/boot/entry.o: boot/entry.asm
+	mkdir -p $(dir $@)
+	$(NASM) -f elf64 $< -o $@
 
-$(ISO): $(KERNEL) boot/grub.cfg
-	mkdir -p $(BUILD)/isodir/boot/grub
-	cp $(KERNEL) $(BUILD)/isodir/boot/satos.elf
-	cp boot/grub.cfg $(BUILD)/isodir/boot/grub/grub.cfg
-	grub-mkrescue -o $(ISO) $(BUILD)/isodir
+$(BUILD)/kernel/cpu/isr.o: kernel/cpu/isr.asm
+	mkdir -p $(dir $@)
+	$(NASM) -f elf64 $< -o $@
 
-run: $(ISO)
-	qemu-system-x86_64 -cdrom $(ISO)
-
-debug: $(ISO)
-	qemu-system-x86_64 -cdrom $(ISO) -s -S
+run: $(BUILD)/satos.iso
+	qemu-system-x86_64 -cdrom $(BUILD)/satos.iso
 
 clean:
 	rm -rf $(BUILD)
