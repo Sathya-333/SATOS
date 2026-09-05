@@ -11,9 +11,13 @@ void scheduler_init(void)
         threads[i].id = 0;
         threads[i].rsp = 0;
         threads[i].rip = 0;
-        threads[i].state = 0;
+        threads[i].state = THREAD_UNUSED;
     }
 
+    /*
+     * Create the first kernel thread.
+     * This represents the code that is already running.
+     */
     threads[0].id = next_thread_id++;
-    threads[0].state = 1;
+    threads[0].state = THREAD_RUNNING;
 }
