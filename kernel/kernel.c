@@ -12,6 +12,9 @@
 static uint8_t row = 0;
 static uint8_t column = 0;
 
+static int thread_1;
+static int thread_2;
+
 static void clear_screen(void)
 {
     for (int y = 0; y < VGA_HEIGHT; y++)
@@ -82,6 +85,58 @@ static void print_number(uint64_t number)
     }
 }
 
+/* ------------------------------------------------------------ */
+/* Thread 1                                                     */
+/* ------------------------------------------------------------ */
+
+static void test_thread_1(void)
+{
+    uint64_t last_tick = 0;
+
+    print("\nTHREAD 1: ONLINE");
+
+    while (1)
+    {
+        uint64_t ticks = timer_get_ticks();
+
+        if (ticks >= last_tick + 50)
+        {
+            last_tick = ticks;
+            print("\n[T1 RUNNING]");
+        }
+
+        __asm__ volatile ("nop");
+    }
+}
+
+/* ------------------------------------------------------------ */
+/* Thread 2                                                     */
+/* ------------------------------------------------------------ */
+
+static void test_thread_2(void)
+{
+    uint64_t last_tick = 0;
+
+    print("\nTHREAD 2: ONLINE");
+
+    while (1)
+    {
+        uint64_t ticks = timer_get_ticks();
+
+        if (ticks >= last_tick + 50)
+        {
+            last_tick = ticks;
+            print("\n[T2 RUNNING]");
+        }
+
+        __asm__ volatile ("nop");
+    }
+}
+
+/* ------------------------------------------------------------ */
+/* Kernel entry                                                  */
+/* ------------------------------------------------------------ */
+
 void kmain(void)
 {
     clear_screen();
@@ -99,12 +154,24 @@ void kmain(void)
     timer_init();
     scheduler_init();
 
+    thread_1 = thread_create(test_thread_1);
+    thread_2 = thread_create(test_thread_2);
+
+    if (thread_1 >= 0 && thread_2 >= 0)
+    {
+        print("Threads created\n");
+    }
+
     print("Interrupts   : READY\n");
     print("Timer        : READY\n\n");
 
     __asm__ volatile ("sti");
 
-    print("SATOS> ");
+    print("BEFORE SWITCH\n");
+
+    scheduler_switch_to(thread_1);
+
+    print("AFTER THREAD 1\n");
 
     while (1)
     {
