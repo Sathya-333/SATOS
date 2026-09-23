@@ -10,7 +10,8 @@ enum thread_state
 {
     THREAD_UNUSED,
     THREAD_READY,
-    THREAD_RUNNING
+    THREAD_RUNNING,
+    THREAD_BLOCKED
 };
 
 typedef void (*thread_function)(void);

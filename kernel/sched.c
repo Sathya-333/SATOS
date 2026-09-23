@@ -94,7 +94,11 @@ void scheduler_switch_to(int thread_index)
 
     previous_thread = current_thread;
 
-    threads[previous_thread].state = THREAD_READY;
+    if (threads[previous_thread].state == THREAD_RUNNING)
+    {
+        threads[previous_thread].state = THREAD_READY;
+    }
+
     threads[thread_index].state = THREAD_RUNNING;
 
     current_thread = thread_index;
@@ -105,17 +109,10 @@ void scheduler_switch_to(int thread_index)
     );
 }
 
-void scheduler_tick(void)
+static int scheduler_find_next(void)
 {
     int next_thread;
 
-    /*
-     * Search for the next READY thread,
-     * starting immediately after the current thread.
-     *
-     * Thread 0 is the bootstrap kernel context,
-     * so only threads 1..MAX_THREADS-1 are considered.
-     */
     for (int offset = 1; offset < MAX_THREADS; offset++)
     {
         next_thread = current_thread + offset;
@@ -132,9 +129,22 @@ void scheduler_tick(void)
 
         if (threads[next_thread].state == THREAD_READY)
         {
-            scheduler_switch_to(next_thread);
-            return;
+            return next_thread;
         }
+    }
+
+    return -1;
+}
+
+void scheduler_tick(void)
+{
+    int next_thread;
+
+    next_thread = scheduler_find_next();
+
+    if (next_thread >= 0)
+    {
+        scheduler_switch_to(next_thread);
     }
 }
 
